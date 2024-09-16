@@ -1,8 +1,6 @@
 # Overview
 
 - **privilege-rs** provides a simple and lightweight user interface for privilege escalation using the eframe GUI library. This crate is designed to facilitate requesting root privileges on Linux systems by prompting users to enter their root or admin password through a graphical interface.
-- **can-viewer** is able to see real-time data on CAN bus and set a list of filter CAN IDs.
-- **can-viewer** is an open-source project and willing to receive any contributions from community.
 
 # Features
 
