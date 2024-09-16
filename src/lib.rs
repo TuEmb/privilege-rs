@@ -14,33 +14,47 @@ enum Privilege {
 pub fn privilege_request() {
     if get_privilege() == Privilege::User {
         let options = eframe::NativeOptions {
-            viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+            viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]), // Adjusted size
             ..Default::default()
         };
 
-        // Init for password and notification string.
-        let mut pwd = "".to_owned();
-        let mut notification = "".to_owned();
+        let mut password = String::new();
+        let mut notification = String::new();
 
-        // Run the UI to get password from user input
-        let _ = eframe::run_simple_native("privilege Request", options, move |ctx, _frame| {
+        let _ = eframe::run_simple_native("Privilege Request", options, move |ctx, _frame| {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.vertical(|ui| {
+                // Center the content
+                ui.vertical_centered(|ui| {
+                    ui.heading("Privilege Request");
+
+                    ui.add_space(20.0); // Add space for better layout
+
+                    // Password input section
                     ui.horizontal(|ui| {
-                        let name_label = ui.label("admin/root password: ");
-                        let text_edit = ui
-                            .add(egui::TextEdit::singleline(&mut pwd).password(true))
+                        let name_label = ui.label("Enter admin/root password: ");
+                        ui.add_space(5.0); // Add space between label and input
+                        ui.add(egui::TextEdit::singleline(&mut password).password(true))
                             .labelled_by(name_label.id);
-                        // Check if Enter is pressed while the TextEdit has focus
-                        if text_edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            if verify_password(&pwd) {
-                                let _ = run_with_privilege(pwd.clone());
-                            } else {
-                                notification = "failed to verify the password".to_owned();
-                            }
-                        }
                     });
-                    ui.label(&notification);
+
+                    ui.add_space(10.0); // Add space before the button
+
+                    // Submit button
+                    if ui.button("Submit").clicked()
+                        || ui.input(|i| i.key_pressed(egui::Key::Enter))
+                    {
+                        if verify_password(&password) {
+                            let _ = run_with_privilege(password.clone());
+                        } else {
+                            notification = "Failed to verify the password.".to_owned();
+                        }
+                    }
+
+                    // Notification display
+                    if !notification.is_empty() {
+                        ui.add_space(15.0); // Add space before notification
+                        ui.label(egui::RichText::new(&notification).color(egui::Color32::RED));
+                    }
                 });
             });
         });

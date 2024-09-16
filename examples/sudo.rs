@@ -1,7 +1,6 @@
 use privilege_rs::privilege_request;
 
-
-fn main () {
+fn main() {
     privilege_request();
 
     println!("Run the application with sudo privilege!!!");
