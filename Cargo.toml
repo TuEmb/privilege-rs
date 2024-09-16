@@ -1,0 +1,14 @@
+[package]
+name = "privilege-rs"
+authors = ["Tu Nguyen <nvtu96@gmail.com>"]
+repository = "https://github.com/tuemb/privilege-rs"
+version = "0.1.0"
+edition = "2021"
+description = "A Rust crate for privilege request UI using eframe"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+
+[dependencies]
+egui = "0.28.1"
+eframe = "0.28.1"
+libc = "0.2.127"
