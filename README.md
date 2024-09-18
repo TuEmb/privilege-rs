@@ -15,14 +15,25 @@
 
 ```
 [dependencies]
-privilege-rs = "0.1.0"
+privilege-rs = "0.1.3"
 ```
 
 - In your `main.rs`:
 
 ```
 fn main() {
-    privilege_request();
-    println!("hello root privilege");
+    if let Ok(privilege) = privilege_request() {
+        match privilege {
+            privilege_rs::Privilege::Root => {
+                println!("Run the application as Root privilege");
+            },
+            privilege_rs::Privilege::User => {
+                println!("Failed to request privilege");
+            },
+            privilege_rs::Privilege::Suid => {
+                println!("Run the application as Root privilege");
+            },
+        }
+    }
 }
 ```

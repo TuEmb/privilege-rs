@@ -2,7 +2,7 @@ use eframe::egui;
 use std::process::{Command, Stdio};
 
 #[derive(PartialEq)]
-enum Privilege {
+pub enum Privilege {
     Root,
     User,
     Suid,
@@ -11,53 +11,64 @@ enum Privilege {
 /// Check current privilege:
 ///  - If Root/Suid privilege -> donothing
 ///  - If User privilege -> password request and re-run the application.
-pub fn privilege_request() {
-    if get_privilege() == Privilege::User {
-        let options = eframe::NativeOptions {
-            viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]), // Adjusted size
-            ..Default::default()
-        };
+pub fn privilege_request() -> std::io::Result<Privilege> {
+    match get_privilege() {
+        Privilege::User => {
+            let options = eframe::NativeOptions {
+                viewport: egui::ViewportBuilder::default().with_inner_size([400.0, 300.0]), // Adjusted size
+                ..Default::default()
+            };
 
-        let mut password = String::new();
-        let mut notification = String::new();
+            let mut password = String::new();
+            let mut notification = String::new();
 
-        let _ = eframe::run_simple_native("Privilege Request", options, move |ctx, _frame| {
-            egui::CentralPanel::default().show(ctx, |ui| {
-                // Center the content
-                ui.vertical_centered(|ui| {
-                    ui.heading("Privilege Request");
+            let _ = eframe::run_simple_native("Privilege Request", options, move |ctx, _frame| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    // Center the content
+                    ui.vertical_centered(|ui| {
+                        ui.heading("Privilege Request");
 
-                    ui.add_space(20.0); // Add space for better layout
+                        ui.add_space(20.0); // Add space for better layout
 
-                    // Password input section
-                    ui.horizontal(|ui| {
-                        let name_label = ui.label("Enter admin/root password: ");
-                        ui.add_space(5.0); // Add space between label and input
-                        ui.add(egui::TextEdit::singleline(&mut password).password(true))
-                            .labelled_by(name_label.id);
-                    });
+                        // Password input section
+                        ui.horizontal(|ui| {
+                            let name_label = ui.label("Enter admin/root password: ");
+                            ui.add_space(5.0); // Add space between label and input
+                            ui.add(egui::TextEdit::singleline(&mut password).password(true))
+                                .labelled_by(name_label.id);
+                        });
 
-                    ui.add_space(10.0); // Add space before the button
+                        ui.add_space(10.0); // Add space before the button
 
-                    // Submit button
-                    if ui.button("Submit").clicked()
-                        || ui.input(|i| i.key_pressed(egui::Key::Enter))
-                    {
-                        if verify_password(&password) {
-                            let _ = run_with_privilege(password.clone());
-                        } else {
-                            notification = "Failed to verify the password.".to_owned();
+                        // Submit button
+                        if ui.button("Submit").clicked()
+                            || ui.input(|i| i.key_pressed(egui::Key::Enter))
+                        {
+                            if verify_password(&password) {
+                                run_with_privilege(password.clone());
+                                // close the app
+                            } else {
+                                notification = "Failed to verify the password.".to_owned();
+                            }
                         }
-                    }
 
-                    // Notification display
-                    if !notification.is_empty() {
-                        ui.add_space(15.0); // Add space before notification
-                        ui.label(egui::RichText::new(&notification).color(egui::Color32::RED));
-                    }
+                        // Notification display
+                        if !notification.is_empty() {
+                            ui.add_space(15.0); // Add space before notification
+                            ui.label(egui::RichText::new(&notification).color(egui::Color32::RED));
+                        }
+                    });
                 });
             });
-        });
+            Ok(Privilege::User)
+        }
+        Privilege::Suid => {
+            unsafe {
+                libc::setuid(0);
+            }
+            Ok(Privilege::Suid)
+        }
+        Privilege::Root => Ok(Privilege::Root),
     }
 }
 
@@ -97,22 +108,8 @@ fn verify_password(password: &str) -> bool {
 }
 
 /// Re-run the application with sudo password
-fn run_with_privilege(pwd: String) -> std::io::Result<Privilege> {
-    let current = get_privilege();
-    match current {
-        Privilege::Root => {
-            return Ok(current);
-        }
-        Privilege::Suid => {
-            unsafe {
-                libc::setuid(0);
-            }
-            return Ok(current);
-        }
-        Privilege::User => {
-            println!("Escalating privileges");
-        }
-    }
+fn run_with_privilege(pwd: String) {
+    println!("Escalating privileges");
     let mut args: Vec<_> = std::env::args().collect();
     if let Some(absolute_path) = std::env::current_exe()
         .ok()
